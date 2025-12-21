@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authorizeInterceptor } from './authorize-interceptor'; 
-
+import { provideOAuthClient } from 'angular-oauth2-oidc'; 
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,5 +12,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authorizeInterceptor])),
+    provideOAuthClient()
   ]
 };

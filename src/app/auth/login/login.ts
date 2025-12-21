@@ -54,4 +54,9 @@ debugger;
     });
 
   }
+
+  loginWithGoogle() {
+    debugger;
+    this.auth.googleLogin();
+  }
 }

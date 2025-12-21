@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 
+//oAuth imports
+import { OAuthService } from 'angular-oauth2-oidc';
+import { googleAuthConfig } from '../auth/google-auth.config';
+
 export interface TokenResponse {
   accessToken: string;
   refreshToken: string;
@@ -13,8 +17,13 @@ export interface TokenResponse {
 export class AuthService {
   private apiUrl = 'http://localhost:5003/api/authorize';
 
-  constructor(private http: HttpClient) {}
+  constructor(private oAuth: OAuthService, private http: HttpClient) {
+    this.oAuth.configure(googleAuthConfig);
+  }
 
+ // ---------------------
+  // Normal Login (JWT)
+  // ---------------------
   login(credentials: { username: string; password: string }): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.apiUrl}/login`, credentials);
   }
@@ -48,5 +57,37 @@ export class AuthService {
   getProducts(): Observable<any[]> {
      return this.http.get<any[]>(this.apiUrl.replace('authorize', 'product') + '/GetProducts');
   }
+
+  // ---------------------
+  // GOOGLE LOGIN
+  // ---------------------
+
+  googleLogin() {
+  this.oAuth.loadDiscoveryDocument();
+  this.oAuth.initLoginFlow(); // should redirect now
+}
+
+
+  async processGoogleLogin() {
+     const result = await this.oAuth.loadDiscoveryDocumentAndTryLogin();
+    if (!this.oAuth.hasValidIdToken()) return null;
+
+    const idToken = this.oAuth.getIdToken();
+
+    // Send to .NET backend for validation + local JWT issue
+    return this.http.post('http://localhost:5003/api/googleauth/login', { idToken });
+  }
+
+ getCurrentUser() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return null;
+
+  const payload = JSON.parse(atob(token.split('.')[1]));
+
+  return {
+    username: payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"],
+    role: payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
+  };
+}
 
 }
